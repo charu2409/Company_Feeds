@@ -19,11 +19,12 @@
 </nav>
 
 <div class="container-fluid">
+  <!-- Filters row -->
   <div class="row mb-3">
     <div class="col-md-3 mb-2">
       <label class="form-label fw-semibold">Sector</label>
       <select class="form-select" id="sectorFilter">
-        <option value="ALL">All Sectors</option>
+        <option value="All Sectors">All Sectors</option>
         {% for s in sectors %}
         <option value="{{ s }}">{{ s }}</option>
         {% endfor %}
@@ -32,7 +33,7 @@
     <div class="col-md-3 mb-2">
       <label class="form-label fw-semibold">Rank</label>
       <select class="form-select" id="rankFilter">
-        <option value="ALL">All Ranks</option>
+        <option value="All Ranks">All Ranks</option>
         {% for r in ranks %}
         <option value="{{ r }}">{{ r }}</option>
         {% endfor %}
@@ -46,6 +47,7 @@
   </div>
 
   <div class="row">
+    <!-- LEFT: table -->
     <div class="col-lg-8 mb-3">
       <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -73,6 +75,7 @@
       </div>
     </div>
 
+    <!-- RIGHT: details and news -->
     <div class="col-lg-4">
       <div class="card shadow-sm mb-3" id="detailsCard" style="display:none;">
         <div class="card-header">
