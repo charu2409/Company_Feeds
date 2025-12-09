@@ -1,6 +1,7 @@
 const tableBody = document.getElementById("companyTableBody");
 const sectorFilter = document.getElementById("sectorFilter");
 const rankFilter = document.getElementById("rankFilter");
+const searchInput = document.getElementById("searchInput");
 const companyCount = document.getElementById("companyCount");
 
 const detailsCard = document.getElementById("detailsCard");
@@ -18,9 +19,12 @@ const newsSourceNote = document.getElementById("newsSourceNote");
 async function loadCompanies() {
   const sector = sectorFilter.value;
   const rank = rankFilter.value;
+  const q = searchInput.value.trim();
+
   const params = new URLSearchParams();
   if (sector && sector !== "ALL") params.append("sector", sector);
   if (rank && rank !== "ALL") params.append("rank", rank);
+  if (q) params.append("q", q);
 
   const res = await fetch(`/api/companies?${params.toString()}`);
   const data = await res.json();
@@ -31,11 +35,16 @@ function renderCompanyTable(data) {
   tableBody.innerHTML = "";
   companyCount.textContent = `${data.length} companies`;
 
+  if (!data.length) {
+    detailsCard.style.display = "none";
+    newsCard.style.display = "none";
+    return;
+  }
+
   data.forEach((c, idx) => {
     const tr = document.createElement("tr");
     tr.style.cursor = "pointer";
 
-    // rank colour cell background
     const rankColor = c.rank_color || "#ffffff";
 
     tr.innerHTML = `
@@ -54,7 +63,6 @@ function renderCompanyTable(data) {
 
     tableBody.appendChild(tr);
 
-    // auto‑select first row
     if (idx === 0) {
       showDetails(c);
       loadNews(c.ticker);
@@ -85,7 +93,8 @@ async function loadNews(ticker) {
     newsList.innerHTML = "";
 
     if (!news || news.length === 0) {
-      newsList.innerHTML = `<li class="list-group-item small text-muted">No recent news available.</li>`;
+      newsList.innerHTML =
+        `<li class="list-group-item small text-muted">No recent news available.</li>`;
       return;
     }
 
@@ -102,13 +111,20 @@ async function loadNews(ticker) {
     });
 
     newsSourceNote.textContent =
-      "News feed powered by your connected news API (configure in backend).";
+      "News feed currently uses a placeholder endpoint. Connect a real news API in the backend.";
   } catch (e) {
-    newsList.innerHTML = `<li class="list-group-item small text-muted">Error loading news.</li>`;
+    newsList.innerHTML =
+      `<li class="list-group-item small text-muted">Error loading news.</li>`;
   }
 }
 
 sectorFilter.addEventListener("change", loadCompanies);
 rankFilter.addEventListener("change", loadCompanies);
+
+let searchTimeout = null;
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(loadCompanies, 300);
+});
 
 document.addEventListener("DOMContentLoaded", loadCompanies);
