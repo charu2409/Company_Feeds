@@ -4,13 +4,11 @@ import os
 
 app = Flask(__name__)
 
-# ---------- CONFIG ----------
-EXCEL_PATH = "Top-100-companies-rule-finbert-ranked.xlsx"  # exact filename from repo[file:1]
+EXCEL_PATH = "Top-100-companies-rule-finbert-ranked.xlsx"  # must match repo name
 SHEET_NAME = "Sheet1"
 RANK_COL = "Expansion_Rank"
 SECTOR_COL = "BICS L1 Sect Nm"
 
-# ---------- LOAD DATA ----------
 if not os.path.exists(EXCEL_PATH):
     raise FileNotFoundError(f"Excel file not found at {EXCEL_PATH}")
 
@@ -46,13 +44,13 @@ def rank_to_color(rank):
     except Exception:
         return "#ffffff"
     if r == 1:
-        return "#c6efce"   # green
+        return "#c6efce"
     if r == 2:
-        return "#ffeb9c"   # yellow
+        return "#ffeb9c"
     if r == 3:
-        return "#ffc7ce"   # red
+        return "#ffc7ce"
     if r == 4:
-        return "#bdd7ee"   # blue
+        return "#bdd7ee"
     return "#eeeeee"
 
 df_display["rank_color"] = df_display["rank"].apply(rank_to_color)
@@ -60,14 +58,9 @@ df_display["rank_color"] = df_display["rank"].apply(rank_to_color)
 all_sectors = sorted(df_display["sector"].dropna().unique().tolist())
 all_ranks = sorted(df_display["rank"].dropna().unique().tolist())
 
-# ---------- ROUTES ----------
 @app.route("/")
 def index():
-    return render_template(
-        "index.html",
-        sectors=all_sectors,
-        ranks=all_ranks
-    )
+    return render_template("index.html", sectors=all_sectors, ranks=all_ranks)
 
 @app.route("/api/companies")
 def api_companies():
@@ -75,16 +68,14 @@ def api_companies():
     rank = request.args.get("rank", "").strip()
     q = request.args.get("q", "").strip().lower()
 
-    def is_all(value: str) -> bool:
-        return value == "" or value.lower().startswith("all")
+    def is_all(val: str) -> bool:
+        return val == "" or val.lower().startswith("all")
 
     filtered = df_display.copy()
 
-    # Sector filter
     if not is_all(sector):
         filtered = filtered[filtered["sector"] == sector]
 
-    # Rank filter
     if not is_all(rank):
         try:
             r_int = int(float(rank))
@@ -92,7 +83,6 @@ def api_companies():
         except Exception:
             pass
 
-    # Search filter
     if q:
         filtered = filtered[
             filtered["company_name"].str.lower().str.contains(q, na=False)
@@ -103,7 +93,6 @@ def api_companies():
 
 @app.route("/api/news/<ticker>")
 def api_news(ticker):
-    # Placeholder – replace with real news API if needed
     dummy_news = [
         {
             "title": f"Latest strategic update for {ticker}",
