@@ -1,32 +1,33 @@
 from flask import Flask, render_template, jsonify, request
 import pandas as pd
+import os
 
 app = Flask(__name__)
 
 # ---------- CONFIG ----------
-EXCEL_PATH = "Top-100-companies-rule-finbert-ranked.xlsx"
-SHEET_NAME = "Sheet1"  # change if different
-RANK_COL = "Expansion_Rank"  # rank column name
-SECTOR_COL = "BICS L1 Sect Nm"  # sector column
-NEWS_LIMIT_PER_COMPANY = 5
+EXCEL_PATH = "Top-100-companies-rule+finbert-ranked.xlsx"  # exact filename in repo
+SHEET_NAME = "Sheet1"
+RANK_COL = "Expansion_Rank"
+SECTOR_COL = "BICS L1 Sect Nm"
 
 # ---------- LOAD DATA ----------
+if not os.path.exists(EXCEL_PATH):
+    raise FileNotFoundError(f"Excel file not found at {EXCEL_PATH}")
+
 df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
 
-# Keep only needed columns for main grid
 DISPLAY_COLUMNS = [
-    "Name",                # company name
-    "Ticker",              # ticker
-    SECTOR_COL,            # sector
-    RANK_COL,              # rank
-    "Remarks",             # about the company (narrative)
+    "Name",
+    "Ticker",
+    SECTOR_COL,
+    RANK_COL,
+    "Remarks",
     "Present in India (Yes/No)",
-    "Present in TN (Yes/No)"
+    "Present in TN (Yes/No)",
 ]
 
 df_display = df[DISPLAY_COLUMNS].copy()
 
-# Standardise column names for frontend
 df_display = df_display.rename(columns={
     "Name": "company_name",
     "Ticker": "ticker",
@@ -34,39 +35,32 @@ df_display = df_display.rename(columns={
     RANK_COL: "rank",
     "Remarks": "about",
     "Present in India (Yes/No)": "present_in_india",
-    "Present in TN (Yes/No)": "present_in_tn"
+    "Present in TN (Yes/No)": "present_in_tn",
 })
 
-# Drop rows without company name or ticker
 df_display = df_display.dropna(subset=["company_name", "ticker"])
 
-# For dropdown filters
-all_sectors = sorted(df_display["sector"].dropna().unique().tolist())
-all_ranks = sorted(df_display["rank"].dropna().unique().tolist())
-
-
-# ---------- SIMPLE RANK→COLOR MAPPING ----------
-# Adjust colours to exactly match your Excel legend if needed
 def rank_to_color(rank):
     try:
         r = int(rank)
     except Exception:
         return "#ffffff"
     if r == 1:
-        return "#c6efce"  # light green
+        return "#c6efce"
     if r == 2:
-        return "#ffeb9c"  # light yellow
+        return "#ffeb9c"
     if r == 3:
-        return "#ffc7ce"  # light red
+        return "#ffc7ce"
     if r == 4:
-        return "#bdd7ee"  # light blue
+        return "#bdd7ee"
     return "#eeeeee"
-
 
 df_display["rank_color"] = df_display["rank"].apply(rank_to_color)
 
+all_sectors = sorted(df_display["sector"].dropna().unique().tolist())
+all_ranks = sorted(df_display["rank"].dropna().unique().tolist())
 
-# ---------- HOME PAGE ----------
+# ---------- ROUTES ----------
 @app.route("/")
 def index():
     return render_template(
@@ -75,12 +69,11 @@ def index():
         ranks=all_ranks
     )
 
-
-# ---------- API: COMPANY LIST WITH FILTERS ----------
 @app.route("/api/companies")
 def api_companies():
     sector = request.args.get("sector")
     rank = request.args.get("rank")
+    q = request.args.get("q", "").strip().lower()
 
     filtered = df_display.copy()
 
@@ -94,26 +87,26 @@ def api_companies():
         except Exception:
             pass
 
+    if q:
+        filtered = filtered[
+            filtered["company_name"].str.lower().str.contains(q, na=False)
+            | filtered["ticker"].str.lower().str.contains(q, na=False)
+        ]
+
     data = filtered.to_dict(orient="records")
     return jsonify(data)
 
-
-# ---------- API: RECENT NEWS (dummy placeholder) ----------
-# You will replace this with a real news API (e.g. NewsAPI, GNews, Bing, etc.)
 @app.route("/api/news/<ticker>")
 def api_news(ticker):
-    # Minimal static placeholder; integrate external API here
-    # Example: call your news API with company name / ticker and return JSON
     dummy_news = [
         {
             "title": f"Latest strategic update for {ticker}",
             "url": "#",
-            "source": "Internal / Placeholder",
-            "published": "N/A"
+            "source": "Placeholder",
+            "published": "N/A",
         }
     ]
-    return jsonify(dummy_news[:NEWS_LIMIT_PER_COMPANY])
-
+    return jsonify(dummy_news)
 
 if __name__ == "__main__":
     app.run(debug=True)
