@@ -22,8 +22,8 @@ async function loadCompanies() {
   const q = searchInput.value.trim();
 
   const params = new URLSearchParams();
-  if (sector && sector !== "ALL") params.append("sector", sector);
-  if (rank && rank !== "ALL") params.append("rank", rank);
+  if (sector) params.append("sector", sector);
+  if (rank) params.append("rank", rank);
   if (q) params.append("q", q);
 
   const res = await fetch(`/api/companies?${params.toString()}`);
