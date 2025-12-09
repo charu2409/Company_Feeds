@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # ---------- CONFIG ----------
-EXCEL_PATH = "Top-100-companies-rule+finbert-ranked.xlsx"  # exact filename in repo
+EXCEL_PATH = "Top-100-companies-rule-finbert-ranked.xlsx"  # exact filename in repo
 SHEET_NAME = "Sheet1"
 RANK_COL = "Expansion_Rank"
 SECTOR_COL = "BICS L1 Sect Nm"
